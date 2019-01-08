@@ -203,4 +203,4 @@ def get_user():
 if __name__ == "__main__":
 	get_url()
 	get_user()
-	app.run(port=3000)
+	app.run(ssl_context='adhoc',port=3000)
