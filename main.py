@@ -12,6 +12,33 @@ from linebot.exceptions import (
 from linebot.models import (
     MessageEvent, TextMessage,ImageMessage,ButtonsTemplate,TemplateSendMessage,MessageTemplateAction,TextSendMessage,ImageSendMessage,FollowEvent
 )
+class Personal_setting():
+    	def __init__(self,id,status):
+		self.user_id=id
+		self.status=status
+
+def In_Usrlist(id):
+	for person in user_id_list:
+		if id==person.user_id:
+			return person
+		
+def get_url():
+	'''
+	初始化url_list from db
+	'''
+	print('蝦蝦蝦蝦蝦')
+	urls=url_collection.find()
+	for url in urls:
+		url_list.append(url)
+def get_user():
+	'''
+	初始化user_id_list from db
+	'''
+	users=user_collection.find()
+	for user in users:
+		newone=Personal_setting(user['user_id'],user['status'])
+		user_id_list.append(newone)
+
 
 app = Flask(__name__)
 translator = Translator()
@@ -22,8 +49,7 @@ user_id_list=[]
 url_list=[]
 user_collection=MongoDB('mao','user_information')
 url_collection=MongoDB('mao','mao_url')
-get_url()
-get_user()
+
 @app.route("/", methods=['POST'])
 def callback():
     # get X-Line-Signature header value
@@ -175,32 +201,7 @@ def handle_event(event):
 	user_id_list.append(newone)	#加入新使用者
 	user_collection.insert({"user_id":profile.user_id,"status":"normal"}) #把新使用者資料加入db
 	
-class Personal_setting():
-	def __init__(self,id,status):
-		self.user_id=id
-		self.status=status
 
-def In_Usrlist(id):
-	for person in user_id_list:
-		if id==person.user_id:
-			return person
-		
-def get_url():
-	'''
-	初始化url_list from db
-	'''
-	print('蝦蝦蝦蝦蝦')
-	urls=url_collection.find()
-	for url in urls:
-		url_list.append(url)
-def get_user():
-	'''
-	初始化user_id_list from db
-	'''
-	users=user_collection.find()
-	for user in users:
-		newone=Personal_setting(user['user_id'],user['status'])
-		user_id_list.append(newone)
 
 if __name__ == "__main__":
 	app.run(port=3000)
