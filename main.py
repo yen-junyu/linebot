@@ -17,6 +17,8 @@ class Personal_setting():
 	def __init__(self,id,status):
 		self.user_id=id
 		self.status=status
+	def setStatus(s):
+		self.status=s
 
 def In_Usrlist(id):
 	for person in user_id_list:
@@ -41,7 +43,6 @@ def get_user():
 	for user in users:
 		newone=Personal_setting(user['user_id'],user['status'])
 		user_id_list.append(newone)
-		print(type(newone))
 
 
 app = Flask(__name__)
@@ -191,7 +192,8 @@ def handle_message(event):
 	elif message[0]=="翻譯":
 		#目前翻譯暫定為中翻英文 還沒結合user_id的個人化
 		content='來說吧!'
-		user.status="translator" #狀態變成翻譯
+		#user.status="translator" #狀態變成翻譯
+		user.setStatus("translator")
 		user_collection.update({"user_id":user.user_id},{"status":"translator"}) #更新資料庫status
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		print(user.status)
