@@ -12,8 +12,9 @@ from linebot.exceptions import (
 from linebot.models import (
     MessageEvent, TextMessage,ImageMessage,ButtonsTemplate,TemplateSendMessage,MessageTemplateAction,TextSendMessage,ImageSendMessage,FollowEvent
 )
+
 class Personal_setting():
-    	def __init__(self,id,status):
+	def __init__(self,id,status):
 		self.user_id=id
 		self.status=status
 
