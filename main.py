@@ -10,7 +10,7 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import (
-    MessageEvent, TextMessage,ImageMessage,ButtonsTemplate,TemplateSendMessage,MessageTemplateAction,TextSendMessage,ImageSendMessage,FollowEvent
+    MessageEvent, TextMessage,ImageMessage,ButtonsTemplate,TemplateSendMessage,MessageTemplateAction,TextSendMessage,ImageSendMessage,FollowEvent,UnfollowEvent
 )
 
 class Personal_setting():
@@ -95,8 +95,8 @@ def handle_message(event):
 
 	if user.status=="translator":
 		content=translator.translate(event.message.text,dest='en').text
-		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		user.status="normal"
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		user_collection.update({"user_id":user.user_id},{"status":"normal"}) #更新資料庫status
 		return 0
 	
@@ -182,7 +182,13 @@ def handle_message(event):
 		user_collection.update({"user_id":user.user_id},{"status":"translator"}) #更新資料庫status
 		return 0
 	elif event.message.text=="電影":
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='還沒寫啦~'))
 		pass
+	elif event.message.text=='裡面有誰':
+		content=''
+		for i in url_list:
+			content+=i.user_id
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 	else :
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='挖聽無啦~'))
 		return 0
@@ -197,16 +203,24 @@ def handle_message(event):
         event.reply_token,
         TextSendMessage(text=event.message.text))
 
+@handler.add(UnfollowEvent)
+def handle_event(event):
+	profile = line_bot_api.get_profile(event.source.user_id)
+	user_collection.remove({"user_id":profile.user_id})
+	user_id_list.remove()
+	for i,o in enumerate(user_id_list):
+		if o.user_id==profile.user_id:
+			del user_id_list[i]
+			break
 
 @handler.add(FollowEvent)
 def handle_event(event):
-	content='歡迎使用本貓\n輸入 開始玩貓 來使用本喵'
-	line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 	profile = line_bot_api.get_profile(event.source.user_id)
 	newone = Personal_setting(profile.user_id,"normal")
-
 	user_id_list.append(newone)	#加入新使用者
 	user_collection.insert({"user_id":profile.user_id,"status":"normal"}) #把新使用者資料加入db
+	content='歡迎使用本貓\n輸入 開始玩貓 來使用本喵'
+	line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 	
 
 
