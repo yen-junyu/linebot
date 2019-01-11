@@ -22,7 +22,8 @@ user_id_list=[]
 url_list=[]
 user_collection=MongoDB('mao','user_information')
 url_collection=MongoDB('mao','mao_url')
-
+get_url()
+get_user()
 @app.route("/", methods=['POST'])
 def callback():
     # get X-Line-Signature header value
@@ -188,6 +189,7 @@ def get_url():
 	'''
 	初始化url_list from db
 	'''
+	print('蝦蝦蝦蝦蝦')
 	urls=url_collection.find()
 	for url in urls:
 		url_list.append(url)
@@ -199,8 +201,6 @@ def get_user():
 	for user in users:
 		newone=Personal_setting(user['user_id'],user['status'])
 		user_id_list.append(newone)
-	
+
 if __name__ == "__main__":
-	get_url()
-	get_user()
-	app.run(ssl_context='adhoc',port=3000)
+	app.run(port=3000)
