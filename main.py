@@ -183,6 +183,9 @@ def handle_message(event):
 		return 0
 	elif event.message.text=="電影":
 		pass
+	elif :
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='挖聽無啦~'))
+		return 0
 
 '''
 圖像事件
