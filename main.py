@@ -50,6 +50,9 @@ user_id_list=[]
 url_list=[]
 user_collection=MongoDB('mao','user_information')
 url_collection=MongoDB('mao','mao_url')
+get_url()
+get_user()
+
 
 @app.route("/", methods=['POST'])
 def callback():
