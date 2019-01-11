@@ -184,9 +184,9 @@ def handle_message(event):
 	elif message[0]=="翻譯":
 		#目前翻譯暫定為中翻英文 還沒結合user_id的個人化
 		content='來說吧!'
-		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		user.status="translator" #狀態變成翻譯
 		user_collection.update({"user_id":user.user_id},{"status":"translator"}) #更新資料庫status
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		return 0
 	elif message[0]=='裡面有誰':
 		content=''
