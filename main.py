@@ -27,7 +27,7 @@ def get_url():
 	'''
 	初始化url_list from db
 	'''
-	print('蝦蝦蝦蝦蝦')
+	print('url')
 	urls=url_collection.find()
 	for url in urls:
 		url_list.append(url)
@@ -35,7 +35,9 @@ def get_user():
 	'''
 	初始化user_id_list from db
 	'''
+	print('user')
 	users=user_collection.find()
+	
 	for user in users:
 		newone=Personal_setting(user['user_id'],user['status'])
 		user_id_list.append(newone)
@@ -78,9 +80,11 @@ def callback():
 def handle_message(event):
 	
 	print("event.message.text:", event.message.text)
+	print(len(user_id_list))
 	
 	profile = line_bot_api.get_profile(event.source.user_id)
 	user=In_Usrlist(profile.user_id)
+	
 	'''
 	print(profile.display_name)
 	print(profile.user_id)
@@ -90,14 +94,16 @@ def handle_message(event):
 	if user is None:
 		profile = line_bot_api.get_profile(event.source.user_id)
 		newone = Personal_setting(profile.user_id,"normal")
+		print('user:'+str(len(user_id_list)))
 		user_id_list.append(newone)	#加入新使用者
+		print('user'+str(len(user_id_list)))
 		user_collection.insert({"user_id":profile.user_id,"status":"normal"}) #把新使用者資料加入db
 		content='不好意思 再試一次'
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		return 0
 	
 	message=event.message.text.split(' ')
-	
+	print(user.status)
 	
 	if user.status=="translator":
 		content=translator.translate(event.message.text,dest='en').text
@@ -105,6 +111,7 @@ def handle_message(event):
 		user_collection.update({"user_id":user.user_id},{"status":"normal"}) #更新資料庫status
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		return 0
+	
 	if message[0]=="開始玩貓":
 		Buttons_Template=TemplateSendMessage(
 				alt_text='開始玩template',
@@ -187,6 +194,7 @@ def handle_message(event):
 		user.status="translator" #狀態變成翻譯
 		user_collection.update({"user_id":user.user_id},{"status":"translator"}) #更新資料庫status
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
+		print(user.status)
 		return 0
 	elif message[0]=='裡面有誰':
 		content=''
