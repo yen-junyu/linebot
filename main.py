@@ -39,6 +39,7 @@ def get_user():
 	for user in users:
 		newone=Personal_setting(user['user_id'],user['status'])
 		user_id_list.append(newone)
+		print(type(newone))
 
 
 app = Flask(__name__)
@@ -75,7 +76,7 @@ def callback():
 '''
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-	print("event.reply_token:", event.reply_token)
+	
 	print("event.message.text:", event.message.text)
 	
 	profile = line_bot_api.get_profile(event.source.user_id)
@@ -86,22 +87,25 @@ def handle_message(event):
 	print(profile.picture_url)
 	print(profile.status_message)
 	'''
-
 	if user is None:
-		content='再加一次好友'
+		profile = line_bot_api.get_profile(event.source.user_id)
+		newone = Personal_setting(profile.user_id,"normal")
+		user_id_list.append(newone)	#加入新使用者
+		user_collection.insert({"user_id":profile.user_id,"status":"normal"}) #把新使用者資料加入db
+		content='不好意思 再試一次'
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		return 0
 	
-
+	message=event.message.text.split(' ')
+	
+	
 	if user.status=="translator":
 		content=translator.translate(event.message.text,dest='en').text
 		user.status="normal"
-		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		user_collection.update({"user_id":user.user_id},{"status":"normal"}) #更新資料庫status
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		return 0
-	
-
-	if event.message.text=="開始玩貓":
+	if message[0]=="開始玩貓":
 		Buttons_Template=TemplateSendMessage(
 				alt_text='開始玩template',
 				template=ButtonsTemplate(
@@ -130,7 +134,7 @@ def handle_message(event):
 			)
 		line_bot_api.reply_message(event.reply_token, Buttons_Template)
 		return 0
-	elif event.message.text=="賣萌":
+	elif message[0]=="賣萌":
 		Buttons_Template=TemplateSendMessage(
 				alt_text='開始玩template',
 				template=ButtonsTemplate(
@@ -155,11 +159,11 @@ def handle_message(event):
 			)
 		line_bot_api.reply_message(event.reply_token, Buttons_Template)
 		return 0
-	elif event.message.text=="學貓叫":
+	elif message[0]=="學貓叫":
 		content='抱歉貓咪沙啞了QAQ\nhttps://google-translate-proxy.herokuapp.com/api/tts?query=我們一起學貓叫+一起喵喵描妙妙&language=zh-tw'
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		return 0
-	elif event.message.text=="貓咪照":
+	elif message[0]=="貓咪照":
 		url_object=random.choice(url_list)
 		image_message = ImageSendMessage(
 			original_content_url=url_object['url'],
@@ -174,25 +178,41 @@ def handle_message(event):
 		line_bot_api.reply_message(event.reply_token,message)
 		return 0
 		'''
-	elif event.message.text=="翻譯":
+	elif message[0]=="電影":
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='還沒寫啦~'))
+		pass
+	elif message[0]=="翻譯":
 		#目前翻譯暫定為中翻英文 還沒結合user_id的個人化
 		content='來說吧!'
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		user.status="translator" #狀態變成翻譯
 		user_collection.update({"user_id":user.user_id},{"status":"translator"}) #更新資料庫status
 		return 0
-	elif event.message.text=="電影":
-		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='還沒寫啦~'))
-		pass
-	elif event.message.text=='裡面有誰':
+	elif message[0]=='裡面有誰':
 		content=''
-		for i in url_list:
+		for i in user_id_list:
 			content+=i.user_id
+			content+='\n'
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
+	elif message[0]=='離開':
+		user_collection.remove({"user_id":profile.user_id})
+		for i,o in enumerate(user_id_list):
+			if o.user_id==profile.user_id:
+				del user_id_list[i]
+				break
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='貓貓我不吵你了 掰掰'))
+	elif message[0]=='喵喵傳話':
+		if In_Usrlist(message[1]) is not None:
+			line_bot_api.push_message(message[1],TextSendMessage(message[2]))
+		else :
+			line_bot_api.reply_message(event.reply_token,TextSendMessage(text='找不到這個人欸?'))
 	else :
-		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='挖聽無啦~'))
+		c=['挖聽無啦~','哩底嘞共蝦碗糕','你找碴484啦','蛤?','臭宅醒醒 去打code']
+		content=random.choice(c)
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		return 0
-
+	
+	
 '''
 圖像事件
 '''
@@ -203,15 +223,6 @@ def handle_message(event):
         event.reply_token,
         TextSendMessage(text=event.message.text))
 
-@handler.add(UnfollowEvent)
-def handle_event(event):
-	profile = line_bot_api.get_profile(event.source.user_id)
-	user_collection.remove({"user_id":profile.user_id})
-	user_id_list.remove()
-	for i,o in enumerate(user_id_list):
-		if o.user_id==profile.user_id:
-			del user_id_list[i]
-			break
 
 @handler.add(FollowEvent)
 def handle_event(event):
