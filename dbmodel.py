@@ -51,3 +51,12 @@ class MongoDB:
             return True
         except:
             return False
+
+'''
+user_collection=MongoDB('mao','user_information')
+
+a=list(user_collection.find({"user_id": {"$regex":"^U792"}}))
+print(len(a))
+for t in a :
+    print(t)
+'''

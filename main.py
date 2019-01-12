@@ -33,7 +33,7 @@ handler = WebhookHandler('c38fe0a9dda346d346995cd62ecd6bda')
 url_list=[]
 user_collection=MongoDB('mao','user_information')
 url_collection=MongoDB('mao','mao_url')
-Command=['開始玩貓','賣萌','學貓叫','電影','給我建議','翻譯','喵喵傳話','翻譯裡面有誰','裡面有誰','離開','其它指令']
+Command=['開始玩貓','賣萌','學貓叫','電影','貓咪照','其他指令','翻譯','喵喵傳話','翻譯裡面有誰','裡面有誰','離開','指令','其它指令']
 get_url()
 
 
@@ -74,7 +74,7 @@ def handle_message(event):
 		user不在資料庫裡面
 		'''
 		profile = line_bot_api.get_profile(event.source.user_id)
-		user_collection.insert({"user_id":profile.user_id,"status":"normal"}) #把新使用者資料加入db
+		user_collection.insert({"user_id":profile.user_id,"status":"normal","picture_url":profile.picture_url}) #把新使用者資料加入db
 		content='不好意思 再試一次'
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		return 0
@@ -120,7 +120,7 @@ def handle_message(event):
 						),
 						MessageTemplateAction(
 							label='其它指令',
-							text='其它指令'
+							text='指令'
 						)
 					]
 				)
@@ -173,7 +173,7 @@ def handle_message(event):
 	elif message[0]=='給我建議':
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='還沒寫啦~'))
 		pass
-	elif message[0]=='其它指令':
+	elif message[0]=='指令' or message[0]=='其它指令' or message[0]=='其他指令':
 		Buttons_Template=TemplateSendMessage(
 				alt_text='開始玩template',
 				template=ButtonsTemplate(
@@ -215,15 +215,16 @@ def handle_message(event):
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='貓貓我不吵你了 掰掰'))
 	elif message[0]=='喵喵傳話':
 		if len(message)!=3:
-			line_bot_api.reply_message(event.reply_token,TextSendMessage('格式錯誤\n範例:喵喵傳話 id 你好'))
+			line_bot_api.reply_message(event.reply_token,TextSendMessage('格式錯誤\n範例:喵喵傳話 id前四碼 你好'))
 			return 0 
 		print(message[1])
-		u=list(user_collection.find({"user_id":message[1]}))
+		u=list(user_collection.find({"user_id": {"$regex":message[1]}}))
 		
 		if len(u)==0:
 			line_bot_api.reply_message(event.reply_token,TextSendMessage(text='找不到這個人欸?'))
 		elif len(u)==1:
-			line_bot_api.push_message(message[1],TextSendMessage(message[2]))
+			line_bot_api.push_message(u[0]['user_id'],TextSendMessage(message[2]))
+			line_bot_api.reply_message(event.reply_token,TextMessage(text='成功發送'+message[2]+'給'+u[0]['user_id']))
 		else :
 			print('error')
 
