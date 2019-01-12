@@ -13,17 +13,7 @@ from linebot.models import (
     MessageEvent, TextMessage,ImageMessage,ButtonsTemplate,TemplateSendMessage,MessageTemplateAction,TextSendMessage,ImageSendMessage,FollowEvent,UnfollowEvent
 )
 
-class Personal_setting():
-	def __init__(self,id,status):
-		self.user_id=id
-		self.status=status
-	def setStatus(s):
-		self.status=s
 
-def In_Usrlist(id):
-	for person in user_id_list:
-		if id==person.user_id:
-			return person
 		
 def get_url():
 	'''
@@ -33,16 +23,6 @@ def get_url():
 	urls=url_collection.find()
 	for url in urls:
 		url_list.append(url)
-def get_user():
-	'''
-	初始化user_id_list from db
-	'''
-	print('user')
-	users=user_collection.find()
-	
-	for user in users:
-		newone=Personal_setting(user['user_id'],user['status'])
-		user_id_list.append(newone)
 
 
 app = Flask(__name__)
@@ -50,12 +30,11 @@ translator = Translator()
 line_bot_api = LineBotApi('sPTWas1Ym8raS3EBdO65u6ucGPITp0C8/PxXxDruSILb07Bf/fw9hGpgi/I4HEmii59OqKdR7f/e9g3dOqZD49a+kI20poHfIGbZmDk0hpx3eLJDblc197c1gygHSAdh5pK/Hm5wAN9GlGYR0qjTyAdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('c38fe0a9dda346d346995cd62ecd6bda')
 
-user_id_list=[]
 url_list=[]
 user_collection=MongoDB('mao','user_information')
 url_collection=MongoDB('mao','mao_url')
+Command=['開始玩貓','賣萌','學貓叫','電影','給我建議','翻譯','喵喵傳話','翻譯裡面有誰','裡面有誰','離開','其它指令']
 get_url()
-get_user()
 
 
 @app.route("/", methods=['POST'])
@@ -81,38 +60,44 @@ def callback():
 def handle_message(event):
 	
 	print("event.message.text:", event.message.text)
-	print(len(user_id_list))
 	
-	profile = line_bot_api.get_profile(event.source.user_id)
-	user=In_Usrlist(profile.user_id)
-	
+	message=event.message.text.replace('\n','')
+	message=message.split(' ')
+	print(message)
+	profile = line_bot_api.get_profile(event.source.user_id)	#拿到user_id
+	user=list(user_collection.find({"user_id":profile.user_id}))
 	'''
-	print(profile.display_name)
-	print(profile.user_id)
-	print(profile.picture_url)
-	print(profile.status_message)
+	先檢查
 	'''
-	if user is None:
+	if len(user)==0:
+		'''
+		user不在資料庫裡面
+		'''
 		profile = line_bot_api.get_profile(event.source.user_id)
-		newone = Personal_setting(profile.user_id,"normal")
-		print('user:'+str(len(user_id_list)))
-		user_id_list.append(newone)	#加入新使用者
-		print('user'+str(len(user_id_list)))
 		user_collection.insert({"user_id":profile.user_id,"status":"normal"}) #把新使用者資料加入db
 		content='不好意思 再試一次'
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		return 0
 	
-	message=event.message.text.split(' ')
-	print(user.status)
-	
-	if user.status=="translator":
+	'''
+	如果狀態是翻譯
+	'''
+	if user[0]['status']=="translator":
 		content=translator.translate(event.message.text,dest='en').text
-		user.status="normal"
-		user_collection.update({"user_id":user.user_id},{"status":"normal"}) #更新資料庫status
+		user_collection.update({"user_id":user[0]['user_id']},{"status":"normal"}) #更新資料庫status
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		return 0
 	
+	'''
+	不存在的指令 先擋掉
+	'''
+	if message[0] not in Command:
+		c=['挖聽無啦~','哩底嘞共蝦碗糕','你找碴484啦','蛤?','臭宅醒醒 去打code']
+		content=random.choice(c)
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
+		return 0
+
+
 	if message[0]=="開始玩貓":
 		Buttons_Template=TemplateSendMessage(
 				alt_text='開始玩template',
@@ -134,8 +119,8 @@ def handle_message(event):
 							text='翻譯'
 						),
 						MessageTemplateAction(
-							label='給我建議',
-							text='給我建議'
+							label='其它指令',
+							text='其它指令'
 						)
 					]
 				)
@@ -157,10 +142,6 @@ def handle_message(event):
 						MessageTemplateAction(
 							label='貓咪照',
 							text='貓咪照'
-						),
-						MessageTemplateAction(
-							label='教我說話',
-							text='教我說話'
 						)
 					]
 				)
@@ -189,38 +170,63 @@ def handle_message(event):
 	elif message[0]=="電影":
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='還沒寫啦~'))
 		pass
+	elif message[0]=='給我建議':
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='還沒寫啦~'))
+		pass
+	elif message[0]=='其它指令':
+		Buttons_Template=TemplateSendMessage(
+				alt_text='開始玩template',
+				template=ButtonsTemplate(
+					title='其它服務',
+					text='選擇服務',
+					thumbnail_image_url='https://i.imgur.com/PLpC073.png',
+					actions=[
+						MessageTemplateAction(
+							label='離開',
+							text='離開'
+						),
+						MessageTemplateAction(
+							label='喵喵傳話',
+							text='喵喵傳話'
+						),
+						MessageTemplateAction(
+							label='裡面有誰',
+							text='裡面有誰'
+						)
+					]
+				)
+			)
+		line_bot_api.reply_message(event.reply_token, Buttons_Template)
+		return 0
 	elif message[0]=="翻譯":
-		#目前翻譯暫定為中翻英文 還沒結合user_id的個人化
 		content='來說吧!'
-		#user.status="translator" #狀態變成翻譯
-		user.setStatus("translator")
-		user_collection.update({"user_id":user.user_id},{"status":"translator"}) #更新資料庫status
+		user_collection.update({"user_id":user[0]['user_id']},{"status":"translator"}) #更新資料庫status
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
-		print(user.status)
 		return 0
 	elif message[0]=='裡面有誰':
+		user_list=user_collection.find()
 		content=''
-		for i in user_id_list:
-			content+=i.user_id
+		for i in user_list:
+			content+=i['user_id']
 			content+='\n'
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 	elif message[0]=='離開':
 		user_collection.remove({"user_id":profile.user_id})
-		for i,o in enumerate(user_id_list):
-			if o.user_id==profile.user_id:
-				del user_id_list[i]
-				break
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='貓貓我不吵你了 掰掰'))
 	elif message[0]=='喵喵傳話':
-		if In_Usrlist(message[1]) is not None:
+		if len(message)!=3:
+			line_bot_api.reply_message(event.reply_token,TextSendMessage('格式錯誤\n範例:喵喵傳話 id 你好'))
+			return 0 
+		print(message[1])
+		u=list(user_collection.find({"user_id":message[1]}))
+		
+		if len(u)==0:
+			line_bot_api.reply_message(event.reply_token,TextSendMessage(text='找不到這個人欸?'))
+		elif len(u)==1:
 			line_bot_api.push_message(message[1],TextSendMessage(message[2]))
 		else :
-			line_bot_api.reply_message(event.reply_token,TextSendMessage(text='找不到這個人欸?'))
-	else :
-		c=['挖聽無啦~','哩底嘞共蝦碗糕','你找碴484啦','蛤?','臭宅醒醒 去打code']
-		content=random.choice(c)
-		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
-		return 0
+			print('error')
+
 	
 	
 '''
@@ -237,9 +243,7 @@ def handle_message(event):
 @handler.add(FollowEvent)
 def handle_event(event):
 	profile = line_bot_api.get_profile(event.source.user_id)
-	newone = Personal_setting(profile.user_id,"normal")
-	user_id_list.append(newone)	#加入新使用者
-	user_collection.insert({"user_id":profile.user_id,"status":"normal"}) #把新使用者資料加入db
+	user_collection.insert({"user_id":profile.user_id,"status":"normal","picture_url":profile.picture_url}) #把新使用者資料加入db
 	content='歡迎使用本貓\n輸入 開始玩貓 來使用本喵'
 	line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 	
