@@ -7,7 +7,7 @@ class MongoDB:
         :param db:数据库名称 
         :param collections: 数据库的集合的名称
         """
-        self.client = pymongo.MongoClient("mongodb://mpyhacct092622:asdf2847@ds147461.mlab.com:47461/mao") 
+        self.client = pymongo.MongoClient("mongodb://xxxxxx:xxxx@ds147461.mlab.com:47461/mao") 
         self.db = self.client[db]           #db
         self.post = self.db[collections]    #table or collections
 
