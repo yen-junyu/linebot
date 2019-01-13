@@ -34,7 +34,9 @@ handler = WebhookHandler('c38fe0a9dda346d346995cd62ecd6bda')
 url_list=[]
 user_collection=MongoDB('mao','user_information')
 url_collection=MongoDB('mao','mao_url')
-Command=['開始玩貓','賣萌','學貓叫','電影','貓咪照','其他指令','翻譯','喵喵傳話','翻譯裡面有誰','裡面有誰','離開','指令','其它指令']
+Command=['開始玩貓','賣萌',
+'學貓叫','電影','貓咪照','其他指令','翻譯','喵喵傳話',
+'翻譯裡面有誰','裡面有誰','離開','指令','其它指令','我的id']
 get_url()
 
 
@@ -93,7 +95,7 @@ def handle_message(event):
 	不存在的指令 先擋掉
 	'''
 	if message[0] not in Command:
-		c=['挖聽無啦~','哩底嘞共蝦碗糕','你找碴484啦','蛤?','臭宅醒醒 去打code']
+		c=['挖聽無啦~','哩底嘞共蝦碗糕','你找碴484啦','蛤?','臭宅醒醒 去打code','喵喵喵?!','早','老...老師給我過']
 		content=random.choice(c)
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 		return 0
@@ -203,19 +205,23 @@ def handle_message(event):
 				template=ButtonsTemplate(
 					title='其它服務',
 					text='選擇服務',
-					thumbnail_image_url='https://i.imgur.com/PLpC073.png',
+					thumbnail_image_url='https://i.imgur.com/2nTwu0y.jpg',
 					actions=[
 						MessageTemplateAction(
 							label='離開',
 							text='離開'
 						),
 						MessageTemplateAction(
+							label='裡面有誰',
+							text='裡面有誰'
+						),
+						MessageTemplateAction(
 							label='喵喵傳話',
 							text='喵喵傳話'
 						),
 						MessageTemplateAction(
-							label='裡面有誰',
-							text='裡面有誰'
+							label='我的id',
+							text='我的id'
 						)
 					]
 				)
@@ -231,12 +237,13 @@ def handle_message(event):
 		user_list=user_collection.find()
 		content=''
 		for i in user_list:
-			content+=i['user_id']
+			content+=i['user_id'][0:4]
 			content+='\n'
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 	elif message[0]=='離開':
 		user_collection.remove({"user_id":profile.user_id})
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='貓貓我不吵你了 掰掰'))
+		return 0
 	elif message[0]=='喵喵傳話':
 		if len(message)!=3:
 			line_bot_api.reply_message(event.reply_token,TextSendMessage('格式錯誤\n範例:喵喵傳話 id前四碼 你好'))
@@ -251,7 +258,10 @@ def handle_message(event):
 			line_bot_api.reply_message(event.reply_token,TextMessage(text='成功發送'+message[2]+'給'+u[0]['user_id']))
 		else :
 			print('error')
-
+	elif message[0]=='我的id':
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=profile.user_id[0:4]))
+		return 0
+		
 	
 	
 '''
@@ -268,7 +278,9 @@ def handle_message(event):
 @handler.add(FollowEvent)
 def handle_event(event):
 	profile = line_bot_api.get_profile(event.source.user_id)
-	user_collection.insert({"user_id":profile.user_id,"status":"normal","picture_url":profile.picture_url}) #把新使用者資料加入db
+	user=list(user_collection.find({"user_id":profile.user_id}))
+	if len(user)==0:
+		user_collection.insert({"user_id":profile.user_id,"status":"normal","picture_url":profile.picture_url}) #把新使用者資料加入db
 	content='歡迎使用本貓\n輸入 開始玩貓 來使用本喵'
 	line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
 	
