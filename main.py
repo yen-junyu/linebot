@@ -2,7 +2,8 @@ from flask import Flask, request, abort
 from dbmodel import MongoDB
 import random
 from googletrans import Translator
-
+import requests
+from bs4 import BeautifulSoup
 from linebot import (
     LineBotApi, WebhookHandler
 )
@@ -168,8 +169,31 @@ def handle_message(event):
 		return 0
 		'''
 	elif message[0]=="電影":
-		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='還沒寫啦~'))
-		pass
+		url = 'https://movies.yahoo.com.tw/movie_intheaters.html'
+		respon = requests.get(url)
+		respon.encoding = 'utf-8' # encoded with format utf-8 for chinese character
+		soup = BeautifulSoup(respon.text, 'html.parser')
+
+		rows = soup.find_all('div',class_='release_movie_name')
+		content=''
+		content
+		for row in rows:
+			movies_title = row.find_next('a').string.replace('\n','').replace(' ','')
+			movies_titles = row.find_next('a')
+			movie_address = row.find('a')['href']
+			expect = row.find_next('div',class_='level_name')
+			percent = row.find_next('div',class_='leveltext')
+			_percentage = percent.find_next('span')
+			satisfy = expect.find_next('div',class_='level_name')
+			score = row.find_next('div',class_='leveltext starwithnum')
+			_score = score.find_next('span').get('data-num')
+			time = movies_titles.find_next('div',class_='release_movie_time')
+			
+			content+=movies_title+' '+expect.string+' '+_percentage.string+' '+satisfy.string+' '+_score+' '+time.string+'\n'
+			content+=movie_address+'\n'
+		
+		line_bot_api.reply_message(event.reply_token,TextSendMessage(text=content))
+		return 0
 	elif message[0]=='給我建議':
 		line_bot_api.reply_message(event.reply_token,TextSendMessage(text='還沒寫啦~'))
 		pass
